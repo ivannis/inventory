@@ -1,0 +1,60 @@
+version: '3.2'
+
+services:
+  inventory:
+    container_name: inventory
+    command: php -S 127.0.0.1:13300
+    build:
+      context: .
+    image: inventory:dev
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: mysql
+    depends_on:
+      - redis
+      - mysql
+    ports:
+      - 9501:9501
+      - 5000:5000
+    volumes:
+      - .:/opt/www
+    networks:
+      - default
+
+  redis:
+    container_name: inventory-redis
+    image: redis:latest
+    volumes:
+      - ./storage/docker/redis:/data
+    networks:
+      - default
+
+  mysql:
+    container_name: inventory-mysql
+    image: mysql:latest
+    command:
+      - mysqld
+      - --max_connections=2213
+    environment:
+      MYSQL_DATABASES: ${DB_DATABASE},${DB_DATABASE}_test
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    ports:
+      - ${DB_PORT}:3306
+    volumes:
+      - ./storage/docker/mysql:/var/lib/mysql
+      - ./storage/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - default
+
+networks:
+  default:
+    external: false
+
+volumes:
+  redis:
+    driver: local
+  mysql:
+    driver: local
