@@ -14,15 +14,16 @@ class CreateStockItemTable extends Migration
     public function up(): void
     {
         Schema::create('stock_item', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->uuid('id')->primary();
 
             $table->integer('quantity');
-            $table->float('unit_price');
+            $table->float('unitPrice');
+            $table->string('currency', 3);
 
-            $table->unsignedBigInteger('product_stock_id');
-            $table->foreign('product_stock_id')->references('id')->on('product_stock');
+            $table->uuid('stockId');
+            $table->foreign('stockId')->references('id')->on('stock');
 
-            $table->timestamp('created_at');
+            $table->timestamp('createdAt');
         });
     }
 

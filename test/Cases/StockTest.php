@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace HyperfTest\Cases;
 
 use Carbon\Carbon;
+use Commanded\Core\ValueObject\DateTime\DateTime;
+use Commanded\Core\ValueObject\Money\CurrencyCode;
+use Commanded\Core\ValueObject\Money\Money;
 use HyperfTest\HttpTestCase;
-use Stock\Service\ProductService;
-use Stock\Service\ProductStockService;
+use Stock\Application\ProductService;
+use Stock\Application\StockService;
+use Stock\Domain\ProductId;
 
 /**
  * @internal
@@ -17,24 +21,14 @@ class StockTest extends HttpTestCase
 {
     use DatabaseTrait;
 
-    public function testNoStock()
-    {
-        $this->get('/api/stock/1/status');
-
-        $this->assertEquals($this->response['code'], 404);
-        $this->assertEquals($this->response['message'], 'Product with id 1 not found.');
-        $this->assertEquals($this->response['reason'], 'ProductNotFound');
-    }
-
     public function testEmptyStock()
     {
         $products = $this->getContainer()->get(ProductService::class);
-        $stock = $this->getContainer()->get(ProductStockService::class);
 
-        $product = $products->create('Product 1');
-        $stock->create($product->id);
+        $productId = ProductId::next();
+        $products->create($productId, 'Product 1');
 
-        $this->get('/api/stock/1/status');
+        $this->get(sprintf('/api/stock/%s/status', (string) $productId));
 
         $this->assertEquals($this->response['quantity'], 0);
         $this->assertEquals($this->response['valuation'], 0);
@@ -43,100 +37,97 @@ class StockTest extends HttpTestCase
     public function testValidStockWithItems()
     {
         $products = $this->getContainer()->get(ProductService::class);
-        $stock = $this->getContainer()->get(ProductStockService::class);
+        $stock = $this->getContainer()->get(StockService::class);
 
-        $product = $products->create('Product 1');
-        $stock->create($product->id);
+        $productId = ProductId::next();
+        $products->create($productId, 'Product 1');
 
-        $stock->addItemToStock($product->id, 10, 2.3, Carbon::createFromFormat('d/m/Y', '12/12/2020'));
-        $stock->addItemToStock($product->id, 4, 5, Carbon::createFromFormat('d/m/Y', '12/12/2020'));
+        $stock->addItem($productId, 10, Money::fromAmount(2.3, CurrencyCode::NZD()), DateTime::fromFormat('d/m/Y', '12/12/2020'));
+        $stock->addItem($productId, 4, Money::fromAmount(5, CurrencyCode::NZD()), DateTime::fromFormat('d/m/Y', '12/12/2020'));
 
-        $this->get('/api/stock/1/status');
+        $this->get(sprintf('/api/stock/%s/status', (string) $productId));
 
         $this->assertEquals($this->response['quantity'], 14);
         $this->assertEquals($this->response['valuation'], 43);
 
-        $this->get('/api/stock/1/items');
+        $this->get(sprintf('/api/stock/%s/items', (string) $productId));
 
-        $this->assertEquals($this->response[0]['quantity'], 10);
-        $this->assertEquals($this->response[0]['unit_price'], 2.3);
+        $this->assertEquals($this->response[0]['quantity'], 4);
+        $this->assertEquals($this->response[0]['unitPrice'], 5);
 
-        $this->assertEquals($this->response[1]['quantity'], 4);
-        $this->assertEquals($this->response[1]['unit_price'], 5);
+        $this->assertEquals($this->response[1]['quantity'], 10);
+        $this->assertEquals($this->response[1]['unitPrice'], 2.3);
     }
 
     public function testPurchaseApplyStock()
     {
         $products = $this->getContainer()->get(ProductService::class);
-        $stock = $this->getContainer()->get(ProductStockService::class);
 
-        $product = $products->create('Product 1');
-        $stock->create($product->id);
+        $productId = ProductId::next();
+        $products->create($productId, 'Product 1');
 
-        $this->get('/api/stock/1/status');
+        $this->get(sprintf('/api/stock/%s/status', (string) $productId));
 
         $this->assertEquals($this->response['quantity'], 0);
         $this->assertEquals($this->response['valuation'], 0);
 
         // Given many items were purchased
-        $this->json('/api/stock/1/purchase', [
+        $this->json(sprintf('/api/stock/%s/purchase', (string) $productId), [
             'quantity' => 5,
             'unit_price' => 5,
             'date' => '10/12/2020',
         ]);
 
-        $this->json('/api/stock/1/purchase', [
+        $this->json(sprintf('/api/stock/%s/purchase', (string) $productId), [
             'quantity' => 10,
             'unit_price' => 2.5,
             'date' => '01/12/2020',
         ]);
 
         // When try to apply and amount greater than the quantity
-        $this->json('/api/stock/1/apply', [
+        $this->json(sprintf('/api/stock/%s/apply', (string) $productId), [
             'quantity' => 30,
         ]);
 
-        $this->assertEquals($this->response['code'], 400);
+        $this->assertEquals($this->response['code'], 422);
         $this->assertEquals($this->response['message'], 'Insufficient product quantity.');
-        $this->assertEquals($this->response['reason'], 'InsufficientProductQuantity');
+        $this->assertEquals($this->response['reason'], 'INSUFFICIENT_PRODUCT_QUANTITY');
 
         // When apply a quantity it will take the first purchase products
-        $this->json('/api/stock/1/apply', [
+        $this->json(sprintf('/api/stock/%s/apply', (string) $productId), [
             'quantity' => 12,
         ]);
 
         $this->assertEquals($this->response['total'], 35);
+        $this->assertEquals($this->response['currency'], 'NZD');
 
         // And the stock must have only 3 items
-        $this->get('/api/stock/1/status');
+        $this->get(sprintf('/api/stock/%s/status', (string) $productId));
 
         $this->assertEquals($this->response['quantity'], 3);
         $this->assertEquals($this->response['valuation'], 15);
 
         // When apply a quantity equals to the stock quantity
-        $this->json('/api/stock/1/apply', [
+        $this->json(sprintf('/api/stock/%s/apply', (string) $productId), [
             'quantity' => 3,
         ]);
 
-        $this->assertEquals($this->response['total'], 15);
-
-        // When apply a quantity from an empty stock
-        $this->json('/api/stock/1/apply', [
+        // And apply a quantity from an empty stock
+        $this->json(sprintf('/api/stock/%s/apply', (string) $productId), [
             'quantity' => 4,
         ]);
 
-        $this->assertEquals($this->response['code'], 400);
+        $this->assertEquals($this->response['code'], 422);
         $this->assertEquals($this->response['message'], 'Product is out of stock.');
-        $this->assertEquals($this->response['reason'], 'ProductOutOfStock');
+        $this->assertEquals($this->response['reason'], 'PRODUCT_OUT_OF_STOCK');
     }
 
     public function testPurchaseApplyWithInvalidData()
     {
         $products = $this->getContainer()->get(ProductService::class);
-        $stock = $this->getContainer()->get(ProductStockService::class);
 
-        $product = $products->create('Product 1');
-        $stock->create($product->id);
+        $productId = ProductId::next();
+        $products->create($productId, 'Product 1');
 
         // Invalid purchase
         $this->json('/api/stock/1/purchase', [
@@ -165,51 +156,50 @@ class StockTest extends HttpTestCase
     public function testHistory()
     {
         $products = $this->getContainer()->get(ProductService::class);
-        $stock = $this->getContainer()->get(ProductStockService::class);
 
-        $product = $products->create('Product 1');
-        $stock->create($product->id);
+        $productId = ProductId::next();
+        $products->create($productId, 'Product 1');
 
-        $this->json('/api/stock/1/purchase', [
+        $this->json(sprintf('/api/stock/%s/purchase', (string) $productId), [
             'quantity' => 1,
             'unit_price' => 10,
             'date' => '01/12/2020',
         ]);
 
-        $this->json('/api/stock/1/purchase', [
+        $this->json(sprintf('/api/stock/%s/purchase', (string) $productId), [
             'quantity' => 2,
             'unit_price' => 20,
             'date' => '04/12/2020',
         ]);
 
-        $this->json('/api/stock/1/purchase', [
+        $this->json(sprintf('/api/stock/%s/purchase', (string) $productId), [
             'quantity' => 2,
             'unit_price' => 15,
             'date' => '05/12/2020',
         ]);
 
-        $this->json('/api/stock/1/apply', [
+        $this->json(sprintf('/api/stock/%s/apply', (string) $productId), [
             'quantity' => 2,
         ]);
 
-        $this->get('/api/stock/1/status');
+        $this->get(sprintf('/api/stock/%s/status', (string) $productId));
 
         $this->assertEquals($this->response['quantity'], 3);
         $this->assertEquals($this->response['valuation'], 50);
 
-        $this->get('/api/inventory/1/history');
+        $this->get(sprintf('/api/inventory/%s/history', (string) $productId));
 
         $this->assertEquals($this->response[0]['type'], 'purchased');
         $this->assertEquals($this->response[0]['quantity'], 1);
-        $this->assertEquals($this->response[0]['unit_price'], 10);
+        $this->assertEquals($this->response[0]['unitPrice'], 10);
 
         $this->assertEquals($this->response[1]['type'], 'purchased');
         $this->assertEquals($this->response[1]['quantity'], 2);
-        $this->assertEquals($this->response[1]['unit_price'], 20);
+        $this->assertEquals($this->response[1]['unitPrice'], 20);
 
         $this->assertEquals($this->response[2]['type'], 'purchased');
         $this->assertEquals($this->response[2]['quantity'], 2);
-        $this->assertEquals($this->response[2]['unit_price'], 15);
+        $this->assertEquals($this->response[2]['unitPrice'], 15);
 
         $this->assertEquals($this->response[3]['type'], 'application');
         $this->assertEquals($this->response[3]['quantity'], -2);

@@ -3,6 +3,10 @@
     "type": "project",
     "description": "",
     "license": "MIT",
+    "repositories": [
+        { "type": "path", "url": "packages/commanded/framework", "options": {"symlink": true} },
+        { "type": "path", "url": "packages/commanded/hyperf-bridge", "options": {"symlink": true} }
+    ],
     "require": {
         "php": ">=7.4",
         "ext-swoole": ">=4.5",
@@ -23,7 +27,9 @@
         "hyperf/async-queue": "^2.0",
         "league/csv": "^9.6",
         "hyperf/validation": "^2.0",
-        "hyperf/database": "^2.0"
+        "hyperf/database": "^2.0",
+        "commanded/framework": "dev-master",
+        "commanded/hyperf-bridge": "dev-master"
     },
     "require-dev": {
         "swoole/ide-helper": "^4.5",

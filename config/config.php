@@ -15,7 +15,7 @@ use Psr\Log\LogLevel;
 return [
     'app_name' => env('APP_NAME', 'App Tiles'),
     'app_env' => env('APP_ENV', 'dev'),
-    'api_url' => env('API_URL', 'https://shop-directory-heroku.laybuy.com/api/'),
+    'app_currency' => env('APP_CURRENCY', 'NZD'),
     'scan_cacheable' => env('SCAN_CACHEABLE', false),
     StdoutLoggerInterface::class => [
         'log_level' => [

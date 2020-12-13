@@ -12,6 +12,6 @@ declare(strict_types=1);
 return [
     'http' => [
         Hyperf\Validation\Middleware\ValidationMiddleware::class,
-        Stock\Controller\Middleware\CorsMiddleware::class,
+        Stock\Infrastructure\Http\Middleware\CorsMiddleware::class,
     ],
 ];

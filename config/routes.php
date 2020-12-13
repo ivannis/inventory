@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 use Hyperf\HttpServer\Contract\ResponseInterface;
 use Hyperf\HttpServer\Router\Router;
-use Stock\Controller\InventoryController;
-use Stock\Controller\ProductController;
-use Stock\Controller\StockController;
+use Stock\Infrastructure\Http\Controller\InventoryController;
+use Stock\Infrastructure\Http\Controller\ProductController;
+use Stock\Infrastructure\Http\Controller\StockController;
 
 Router::get('/', function (ResponseInterface $response) {
     return $response->json([

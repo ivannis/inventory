@@ -14,16 +14,17 @@ class CreateInventoryHistoryTable extends Migration
     public function up(): void
     {
         Schema::create('inventory_history', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->uuid('id')->primary();
 
             $table->string('type');
             $table->integer('quantity');
-            $table->float('unit_price')->nullable();
+            $table->float('unitPrice')->nullable();
+            $table->string('currency', 3)->nullable();
 
-            $table->unsignedBigInteger('product_id');
-            $table->foreign('product_id')->references('id')->on('product');
+            $table->uuid('stockId');
+            $table->foreign('stockId')->references('id')->on('stock');
 
-            $table->timestamp('created_at');
+            $table->timestamp('createdAt');
         });
     }
 

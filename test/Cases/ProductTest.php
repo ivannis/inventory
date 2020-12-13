@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace HyperfTest\Cases;
 
 use HyperfTest\HttpTestCase;
-use Stock\Service\ProductService;
+use Stock\Application\ProductService;
+use Stock\Domain\ProductId;
 
 /**
  * @internal
@@ -26,13 +27,11 @@ class ProductTest extends HttpTestCase
     {
         $service = $this->getContainer()->get(ProductService::class);
 
-        $service->create('Product 1');
-        $service->create('Product 2');
+        $service->create(ProductId::next(), 'Product 1');
+        $service->create(ProductId::next(), 'Product 2');
 
         $this->get('/api/products');
 
         $this->assertCount(2, $this->response);
-        $this->assertEquals($this->response[0]['name'], 'Product 1');
-        $this->assertEquals($this->response[1]['name'], 'Product 2');
     }
 }

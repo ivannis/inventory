@@ -22,7 +22,7 @@ export default function StockApplyContainer({ product }) {
     const handleApply = async (values) => {
         try {
             const data = await apply(values);
-            toaster.notify(<div>Hi there, the value of your purchase is <strong>{data.total}</strong> NZD</div>, {
+            toaster.notify(<div>Hi there, the value of your purchase is <strong>{data.total}</strong> {data.currency}</div>, {
                 position: 'top-right',
                 duration: null
             });

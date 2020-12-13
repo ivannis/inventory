@@ -15,10 +15,10 @@ export default function InventoryHistory({ items, order = 'desc' }) {
     let history = order === 'desc' ? items.slice().reverse() : items;
 
     const renderPrice = (item) => {
-        if (item.unit_price) {
+        if (item.unitPrice) {
             return (
                 <div className="price">
-                    {item.unit_price} NZD
+                    {item.unitPrice} NZD
                 </div>
             )
         }
@@ -36,7 +36,7 @@ export default function InventoryHistory({ items, order = 'desc' }) {
                 </div>
             </div>
             <div className="date">
-                {item.created_at}
+                {item.createdAt}
             </div>
         </li>
     );

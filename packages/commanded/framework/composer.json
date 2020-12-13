@@ -1,0 +1,43 @@
+{
+    "name": "commanded/framework",
+    "type": "project",
+    "keywords": [
+        "ddd",
+        "application",
+        "infrastructure"
+    ],
+    "description": "",
+    "license": "Apache-2.0",
+    "require": {
+        "php": ">=7.4",
+
+        "webmozart/assert": "^1.9",
+        "ramsey/uuid": "^4.1",
+        "giggsey/libphonenumber-for-php": "^8.12",
+        "bonami/collections": "^0.2.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.14",
+        "phpstan/phpstan": "^0.12"
+    },
+    "suggest": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Commanded\\": "src"
+        },
+        "files": []
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Commanded\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": [],
+    "scripts": {
+        "analyse": "phpstan analyse --memory-limit 4096M -l 5 -c phpstan.neon",
+        "cs-fix": "php-cs-fixer fix $1"
+    }
+}

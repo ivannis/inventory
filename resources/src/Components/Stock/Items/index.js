@@ -19,12 +19,12 @@ export default function StockItems({ items }) {
                         <strong>{item.quantity}</strong> units
                     </div>
                     <div className="price">
-                        {item.unit_price} NZD
+                        {item.unitPrice} NZD
                     </div>
                 </div>
             </div>
             <div className="date">
-                {item.created_at}
+                {item.createdAt}
             </div>
         </li>
     );
