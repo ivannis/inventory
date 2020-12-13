@@ -70,6 +70,10 @@ composer serve
 
 Now you can check the application at the endpoint: `http://0.0.0.0:5000`.
 
+# Architecture
+
+This example was implemented with a basic architecture. You can find a solution with event-based architecture in the following [branch](https://github.com/ivannis/inventory/tree/event-driven)
+
 # Tests
 
 ```
